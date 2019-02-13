@@ -109,5 +109,33 @@ RUN apt update && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Install BUSCO
+RUN apt update && \
+    apt install --yes \
+	git \
+	python3 && \
+    git clone https://gitlab.com/ezlab/busco.git /opt/busco && \
+    cd /opt/busco && \
+    git checkout 3.0.2 && \
+    rm -rf .git && \
+    python setup.py install && \
+    apt remove --yes \
+	git && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Generate a config file
+WORKDIR /opt/busco/config
+RUN sed 's#/home/osboxes/BUSCOVM/augustus/augustus-3.2.2#'$(dirname $(dirname $(readlink -f $(which augustus))))'#; s#/home/osboxes/BUSCOVM/hmmer/hmmer-3.1b2-linux-intel-ia32/binaries/#'$(dirname $(which hmmsearch))'#' config.ini.default >config.ini
+
+ENV AUGUSTUS_CONFIG_PATH=/opt/augustus-3.3.2/config
+ENV PATH=${PATH}:/opt/busco/scripts
+
+# Test the BUSCO installation
+WORKDIR /opt/busco
+RUN ./scripts/run_BUSCO.py --in sample_data/target.fa --out TEST --lineage_path sample_data/example --mode genome && diff -u -I '#.*' sample_data/run_SAMPLE/short_summary_SAMPLE.txt run_TEST/short_summary_TEST.txt && diff -u -I '#.*' sample_data/run_SAMPLE/missing_busco_list_SAMPLE.tsv run_TEST/missing_busco_list_TEST.tsv && diff -u -I '#.*' sample_data/run_SAMPLE/full_table_SAMPLE.tsv run_TEST/full_table_TEST.tsv
+
 VOLUME /data
 WORKDIR /data
+
+ENTRYPOINT ["run_BUSCO.py"]
