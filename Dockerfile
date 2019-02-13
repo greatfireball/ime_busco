@@ -101,5 +101,13 @@ RUN apt-get update && \
     rm -rf /root/bcftools /root/samtools /root/htslib /root/augustus && \
     augustus --species=human --UTR=on /tmp/examples/example.fa
 
+# install ncbi-blast+ and hmmer
+RUN apt update && \
+    apt install --yes \
+	ncbi-blast+ \
+	hmmer && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
+
 VOLUME /data
 WORKDIR /data
