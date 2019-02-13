@@ -17,9 +17,11 @@ LABEL maintainer="frank.foerster@ime.fraunhofer.de" \
 WORKDIR /opt
 
 # Install required packages
+ENV TOOLDIR="/root"
+
 RUN apt-get update && \
     apt-get install --yes \
-            build-essential \
+	    build-essential \
 	    wget \
 	    git \
 	    autoconf && \
@@ -61,12 +63,8 @@ RUN apt-get update && \
     autoconf -Wno-syntax && \
     ./configure && \
     make && \
-    make install
-
-ENV TOOLDIR="/root"
-
-# Clone AUGUSTUS repository
-RUN git clone https://github.com/Gaius-Augustus/Augustus.git /root/augustus && \
+    make install && \
+    git clone https://github.com/Gaius-Augustus/Augustus.git /root/augustus && \
     cd /root/augustus && \
     git checkout 3.3.2 && \
     rm -rf /root/augustus/.git && \
@@ -76,9 +74,32 @@ RUN git clone https://github.com/Gaius-Augustus/Augustus.git /root/augustus && \
     cd "/root/augustus" && \
     make && \
     make install && \
-    make test
-
-ENV PATH "$PATH:/root/augustus/"
+    apt remove --yes \
+	build-essential \
+	wget \
+	git \
+	autoconf \
+	libboost-iostreams-dev \
+	zlib1g-dev \
+	libgsl-dev \
+	libboost-graph-dev \
+	libsuitesparse-dev \
+	liblpsolve55-dev \
+	libsqlite3-dev \
+	libmysql++-dev \
+	libbamtools-dev \
+	libboost-all-dev \
+	libbz2-dev \
+	liblzma-dev \
+	libncurses5-dev \
+	libssl-dev \
+	libcurl3-dev && \
+    apt autoremove --yes && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    cp -R /root/augustus/examples /tmp/ && \
+    rm -rf /root/bcftools /root/samtools /root/htslib /root/augustus && \
+    augustus --species=human --UTR=on /tmp/examples/example.fa
 
 VOLUME /data
 WORKDIR /data
